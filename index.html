@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Transaction with MetaMask on Lisk Sepolia Testnet</title>
+    <!-- Import ethers.js from a stable CDN -->
+    <script type="module">
+        import { ethers } from './node_modules/ethers/dist/ethers.esm.min.js';
+    </script>
+</head>
+<body>
+    <h1>Send Transaction on Lisk Sepolia Testnet</h1>
+    <form id="transactionForm">
+        <label for="recipient">Recipient Address:</label><br>
+        <input type="text" id="recipient" name="recipient" required><br><br>
+        <label for="amount">Amount (ETH):</label><br>
+        <input type="text" id="amount" name="amount" required><br><br>
+        <button type="submit">Send Transaction</button>
+    </form>
+    <div id="response"></div>
+
+    <script>
+        // Check if ethers.js is loaded properly
+        if (typeof ethers === 'undefined') {
+            console.error('Ethers.js library not loaded properly');
+            alert('Ethers.js library not loaded properly. Check the console for details.');
+        } else {
+            console.log('Ethers.js library loaded successfully');
+        }
+
+        document.getElementById('transactionForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const recipient = document.getElementById('recipient').value;
+            const amount = document.getElementById('amount').value;
+
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    // Request account access from MetaMask
+                    await ethereum.request({ method: 'eth_requestAccounts' });
+
+                    // Create an ethers provider connected to MetaMask
+                    const provider = new ethers.BrowserProvider(window.ethereum);
+                    const signer = provider.getSigner();
+
+                    // Verify that signer is connected and has sendTransaction method
+                    console.log('Signer address:', await signer.getAddress());
+                    console.log('Signer type:', typeof signer.sendTransaction);
+
+                    // Prepare the transaction details for the Lisk Sepolia Testnet
+                    const tx = {
+                        to: recipient,
+                        value: ethers.utils.parseEther(amount),
+                        gasLimit: 21000, // Basic gas limit for a simple transfer
+                        gasPrice: ethers.utils.parseUnits('0.0001', 'gwei'), // Adjust this if needed based on the testnet's gas price
+                        chainId: 4202 // Lisk Sepolia Testnet Chain ID
+                    };
+
+                    // Send the transaction
+                    const txResponse = await signer.sendTransaction(tx);
+                    console.log('Transaction hash:', txResponse.hash);
+                    document.getElementById('response').innerText = `Transaction sent successfully! Hash: ${txResponse.hash}`;
+
+                    // Wait for the transaction to be mined
+                    const receipt = await txResponse.wait();
+                    console.log('Transaction mined in block:', receipt.blockNumber);
+                    document.getElementById('response').innerText += `\nTransaction mined in block: ${receipt.blockNumber}`;
+
+                } catch (error) {
+                    console.error('Error sending transaction:', error);
+                    document.getElementById('response').innerText = 'Error: ' + error.message;
+                }
+            } else {
+                document.getElementById('response').innerText = 'MetaMask is not installed. Please install MetaMask to use this feature.';
+            }
+        });
+    </script>
+</body>
+</html>
